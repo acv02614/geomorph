@@ -30,6 +30,8 @@ pub mod math;
 pub mod mgrs;
 /// Universal Transverse Mercator (UTM)
 pub mod utm;
+/// Latitude and longitude coordinates in dd/mm/ss format
+pub mod dms;
 
 #[cfg(test)]
 mod tests {

@@ -1,4 +1,5 @@
 use crate::coord::Coord;
+use crate::dms::DMS;
 use crate::math::fmod;
 use crate::utm::Utm;
 
@@ -15,7 +16,7 @@ pub struct Mgrs {
 impl Mgrs {
     /// Mgrs constructor.
     pub fn new(utm: Utm) -> Mgrs {
-        Mgrs { utm: utm, prec: 5 }
+        Mgrs { utm, prec: 5 }
     }
 }
 
@@ -68,7 +69,7 @@ impl fmt::Display for Mgrs {
 
         if utm.ups {
         } else {
-            let coord: Coord = self.clone().into();
+            let coord: Coord = (*self).into();
             let ilat = coord.lat.floor();
             let lband = ((ilat + 80.0) / 8.0 - 10.10).min(9.0).max(-10.0);
             let iband = (if coord.lat.abs() > angeps {
@@ -128,9 +129,9 @@ impl fmt::Display for Mgrs {
         if prec > 0 {
             ix -= m * xh;
             iy -= m * yh;
-            let d: f64 = (base as f64).powi((max_prec - &prec) as i32);
-            ix = ix / d;
-            iy = iy / d;
+            let d: f64 = (base as f64).powi((max_prec - prec) as i32);
+            ix /= d;
+            iy /= d;
 
             unsafe {
                 while mgrs.len() < z + prec + prec {
@@ -141,11 +142,11 @@ impl fmt::Display for Mgrs {
 
                 for c in (0..prec).rev() {
                     let ind1: usize = (z + c) as usize;
-                    let ind2: usize = (z + c + &prec) as usize;
+                    let ind2: usize = (z + c + prec) as usize;
                     vec_mgrs[ind1] = digits[(ix % base as f64) as usize] as u8;
-                    ix = ix / base as f64;
+                    ix /= base as f64;
                     vec_mgrs[ind2] = digits[(iy % base as f64) as usize] as u8;
-                    iy = iy / base as f64;
+                    iy /= base as f64;
                 }
             }
         }
@@ -163,6 +164,12 @@ impl From<Utm> for Mgrs {
 impl From<Coord> for Mgrs {
     fn from(coord: Coord) -> Self {
         Mgrs::new(coord.into())
+    }
+}
+
+impl From<DMS> for Mgrs {
+    fn from(dms: DMS) -> Self {
+        Mgrs::new(dms.into())
     }
 }
 

@@ -73,8 +73,8 @@ pub fn tauf(taup: f64, es: f64) -> f64 {
         let taupa: f64 = taupf(tau, es);
         let dtau: f64 = (taup - taupa) * (1.0 + e2m * tau.sqrt())
             / (e2m * 1.0_f64.hypot(tau) * 1.0_f64.hypot(taupa));
-        tau = tau + dtau;
-        if !(dtau.abs() >= stol) {
+        tau += dtau;
+        if dtau.abs() < stol {
             break;
         }
     }

@@ -1,4 +1,4 @@
-use crate::coord::Coord;
+use crate::{coord::Coord, dms::DMS};
 use crate::datum::Datum;
 use crate::math;
 use crate::mgrs::Mgrs;
@@ -63,10 +63,8 @@ impl From<Coord> for Utm {
 
         let easting: f64;
         let northing: f64;
-        let north: bool;
         let mut zone: i32;
         let band: char;
-        let ups: bool;
 
         if lat < -72.0 {
             band = 'C';
@@ -110,8 +108,8 @@ impl From<Coord> for Utm {
             band = 'X';
         }
 
-        north = lat >= 0.0;
-        ups = lat < -80.0 || lat >= 84.0;
+        let north = lat >= 0.0;
+        let ups = !(-80.0..84.0).contains(&lat);
 
         if !ups {
             let fmod_lon: f64 = math::fmod(lon, 360.0);
@@ -135,7 +133,7 @@ impl From<Coord> for Utm {
                 if except_band == 7.0 && zone == 31 && ilon >= 3.0 {
                     // Norway UTM exception
                     zone = 32;
-                } else if except_band == 9.0 && ilon >= 0.0 && ilon <= 42.0 {
+                } else if except_band == 9.0 && (0.0..=42.0).contains(&ilon) {
                     // Svalbard UTM exception
                     zone = 2 * (((ilon as i32) + 183) / 12) + 1;
                 }
@@ -154,15 +152,14 @@ impl From<Coord> for Utm {
             } else {
                 latsign = 1.0
             }
-            let lonsign: f64;
-            if lon_norm < 0.0 {
-                lonsign = -1.0
+            let lonsign: f64 = if lon_norm < 0.0 {
+                -1.0
             } else {
-                lonsign = 1.0
-            }
+                1.0
+            };
 
             let lat_norm: f64 = lat * latsign;
-            lon_norm = lon_norm * lonsign;
+            lon_norm *= lonsign;
 
             let backside: bool = lon_norm > 90.0;
 
@@ -208,10 +205,10 @@ impl From<Coord> for Utm {
             while n > 0 {
                 y1 = (a * y0) - (y1) + (datum.alp[n]);
                 z1 = (a * z0) - (z1) + (2.0 * (n as f64) * datum.alp[n]);
-                n = n - 1;
+                n -= 1;
                 y0 = (a * y1) - (y0) + (datum.alp[n]);
                 z0 = (a * z1) - (z0) + (2.0 * (n as f64) * datum.alp[n]);
-                n = n - 1;
+                n -= 1;
             }
 
             a = Complex::new(s0 * ch0, c0 * sh0);
@@ -240,6 +237,13 @@ impl From<Coord> for Utm {
             band,
             ups,
         }
+    }
+}
+
+impl From<DMS> for Utm {
+    fn from(dms: DMS) -> Self {
+        let coord: Coord = dms.into();
+        coord.into()
     }
 }
 
